@@ -1,0 +1,3 @@
+# Static C runtime on Windows: the portable .exe runs without the VC++ redistributable.
+[target.'cfg(all(windows, target_env = "msvc"))']
+rustflags = ["-C", "target-feature=+crt-static"]

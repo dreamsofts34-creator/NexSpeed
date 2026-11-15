@@ -1,0 +1,66 @@
+// Nex Speed: active connections window (opened from the details window). Dark, fixed width.
+
+import { Colors } from "theme.slint";
+import { ListView } from "std-widgets.slint";
+
+export struct ConnRow {
+    process: string,
+    remote: string,
+}
+
+export component Connections inherits Window {
+    in property <[ConnRow]> rows;
+    in property <string> summary: "";
+    in property <string> note: "";
+
+    icon: @image-url("icon.png");
+    title: "Nex Speed · Connections";
+    background: Colors.bg;
+    preferred-width: 460px;
+    preferred-height: 420px;
+    min-width: 380px;
+    min-height: 240px;
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 8px;
+
+        Text {
+            text: root.summary;
+            color: Colors.text; font-size: 13px; font-weight: 500;
+            height: 20px; vertical-alignment: center;
+        }
+
+        // Column headers
+        HorizontalLayout {
+            height: 18px;
+            Text { text: "Application"; color: Colors.dim; font-size: 11px; horizontal-stretch: 1; }
+            Text { text: "Remote address"; color: Colors.dim; font-size: 11px; horizontal-stretch: 1; }
+        }
+
+        ListView {
+            vertical-stretch: 1;
+            for row in root.rows: Rectangle {
+                height: 24px;
+                HorizontalLayout {
+                    Text {
+                        text: row.process;
+                        color: Colors.text; font-size: 12px; vertical-alignment: center;
+                        overflow: elide; horizontal-stretch: 1;
+                    }
+                    Text {
+                        text: row.remote;
+                        color: Colors.muted; font-size: 12px; vertical-alignment: center;
+                        overflow: elide; horizontal-stretch: 1;
+                    }
+                }
+            }
+        }
+
+        Text {
+            text: root.note;
+            color: Colors.dim; font-size: 11px; height: 16px;
+            vertical-alignment: center;
+        }
+    }
+}

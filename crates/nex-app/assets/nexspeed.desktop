@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Nex Speed
+Comment=Lightweight internet speed meter
+Exec=nexspeed
+Icon=nexspeed
+Terminal=false
+Categories=Network;Monitor;

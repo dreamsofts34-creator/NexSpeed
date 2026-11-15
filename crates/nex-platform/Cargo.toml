@@ -1,0 +1,22 @@
+[package]
+name = "nex-platform"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+nex-core = { workspace = true }
+# 0.5 API: Windows autostart writes HKCU\...\Run (no admin needed), Linux uses ~/.config/autostart.
+auto-launch = "0.5"
+# Global hotkey: Windows and X11 (fails cleanly on Wayland).
+global-hotkey = "0.6"
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true }
+tray-icon = "0.23"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# StatusNotifierItem over D-Bus. tray-icon is GTK-only on Linux and would need a GTK
+# event loop next to Slint's winit loop, so it is not used there.
+# `blocking` feature required: tray_linux.rs uses ksni::blocking::{Handle, TrayMethods}.
+ksni = { version = "0.3", features = ["blocking"] }

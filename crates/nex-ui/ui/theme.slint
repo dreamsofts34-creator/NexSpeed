@@ -1,0 +1,23 @@
+// Colors for all Nex Speed windows. Each window tree has its own copy of a global, so the app
+// sets `light` / `opacity` on every window (see `apply_look` in the app crate).
+
+export global Colors {
+    in property <bool> light: false;
+    // Overlay background opacity, 0.0 - 1.0.
+    in property <float> opacity: 1.0;
+
+    out property <color> bg: light ? #F6F6F8 : #17171A;
+    out property <color> panel: light ? #FFFFFF : #1E1E22;
+    out property <color> text: light ? #17171A : #F4F4F5;
+    out property <color> muted: light ? #52525B : #A1A1AA;
+    out property <color> dim: light ? #71717A : #8B8B94;
+    out property <color> button: light ? #E4E4E9 : #2A2A30;
+    out property <color> primary: light ? #17171A : #F4F4F5;
+    out property <color> on-primary: light ? #F4F4F5 : #17171A;
+    out property <color> border: light ? #00000018 : #ffffff1a;
+    out property <color> down: light ? #2F63D9 : #8FB4FF;
+    out property <color> up: light ? #8A7F63 : #D8D2C4;
+    out property <color> warn: light ? #C77A1E : #F5B97A;
+    out property <color> ok: #4ADE80;
+    out property <color> idle: #71717A;
+}

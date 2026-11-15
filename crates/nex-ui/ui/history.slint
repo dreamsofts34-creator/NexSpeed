@@ -1,0 +1,61 @@
+// Nex Speed history window: bars of daily data usage (download + upload), last 7 or 30 days.
+
+import { Colors } from "theme.slint";
+
+export component History inherits Window {
+    in property <image> chart;
+    in-out property <int> range: 7;
+    in property <string> total-text: "";
+    in property <string> down-text: "";
+    in property <string> up-text: "";
+    in property <string> from-text: "";
+    in property <string> to-text: "";
+    in property <string> peak-text: "";
+    callback range-changed(int);
+
+    icon: @image-url("icon.png");
+    title: "Nex Speed · History";
+    background: Colors.bg;
+    preferred-width: 460px;
+    preferred-height: 360px;
+    min-width: 460px;
+    max-width: 460px;
+    min-height: 360px;
+    max-height: 360px;
+
+    Text { x: 20px; y: 18px; text: "Data usage"; color: Colors.text; font-size: 14px; font-weight: 600; }
+
+    // Range switch
+    Rectangle {
+        x: 262px; y: 12px; width: 84px; height: 28px; border-radius: 8px;
+        background: root.range == 7 ? Colors.primary : Colors.button;
+        Text { text: "7 days"; font-size: 12px; font-weight: 500; horizontal-alignment: center; vertical-alignment: center;
+               color: root.range == 7 ? Colors.on-primary : Colors.text; }
+        TouchArea { clicked => { root.range = 7; root.range-changed(7); } }
+    }
+    Rectangle {
+        x: 354px; y: 12px; width: 84px; height: 28px; border-radius: 8px;
+        background: root.range == 30 ? Colors.primary : Colors.button;
+        Text { text: "30 days"; font-size: 12px; font-weight: 500; horizontal-alignment: center; vertical-alignment: center;
+               color: root.range == 30 ? Colors.on-primary : Colors.text; }
+        TouchArea { clicked => { root.range = 30; root.range-changed(30); } }
+    }
+
+    // Chart panel
+    Rectangle {
+        x: 18px; y: 54px; width: 424px; height: 200px;
+        background: Colors.panel; border-radius: 12px; border-width: 1px; border-color: Colors.border;
+        Image { source: root.chart; x: 12px; y: 12px; width: 400px; height: 156px; image-fit: fill; }
+        Text { x: 12px; y: 174px; width: 200px; text: root.from-text; color: Colors.dim; font-size: 11px; }
+        Text { x: 212px; y: 174px; width: 200px; text: root.to-text; color: Colors.dim; font-size: 11px; horizontal-alignment: right; }
+    }
+
+    // Legend + totals
+    Text { x: 20px; y: 270px; text: "● Download"; color: Colors.down; font-size: 12px; }
+    Text { x: 110px; y: 270px; text: "● Upload"; color: Colors.up; font-size: 12px; }
+    Text { x: 20px; y: 296px; text: "Total"; color: Colors.muted; font-size: 12px; }
+    Text { x: 20px; y: 312px; text: root.total-text; color: Colors.text; font-size: 18px; font-weight: 600; }
+    Text { x: 170px; y: 296px; text: "Download / Upload"; color: Colors.muted; font-size: 12px; }
+    Text { x: 170px; y: 312px; text: root.down-text + "  /  " + root.up-text; color: Colors.text; font-size: 13px; font-weight: 500; }
+    Text { x: 20px; y: 340px; width: 420px; text: root.peak-text; color: Colors.dim; font-size: 11px; }
+}

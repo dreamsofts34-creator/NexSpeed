@@ -1,0 +1,43 @@
+[workspace]
+resolver = "2"
+members = ["crates/nex-core", "crates/nex-net", "crates/nex-platform", "crates/nex-ui", "crates/nex-app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+[workspace.dependencies]
+nex-core = { path = "crates/nex-core" }
+nex-platform = { path = "crates/nex-platform" }
+nex-ui = { path = "crates/nex-ui" }
+nex-net = { path = "crates/nex-net" }
+# Winit backend + software renderer only: no Qt, no OpenGL (femtovg) => small RAM, no GPU needed.
+# software-renderer-systemfonts lets the software renderer use installed system fonts.
+# Pinned to 1.14.x: the UI uses `ListView` (connections.slint), which was removed
+# in Slint 1.18. Do NOT relax to "1.14" (caret) or the resolver drifts to 1.18+.
+# Keep Cargo.lock committed so CI/release resolve the same versions.
+slint = { version = "=1.14.1", default-features = false, features = [
+    "std",
+    "compat-1-2",
+    "backend-winit",
+    "renderer-software",
+    "software-renderer-systemfonts",
+] }
+slint-build = "=1.14.1"
+# Features verified against windows-rs docs: GetIfTable2 / MIB_IF_ROW2 need
+# Win32_Foundation + Win32_NetworkManagement_IpHelper + Win32_NetworkManagement_Ndis.
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_NetworkManagement_Ndis",
+    "Win32_UI_Shell",
+    "Win32_System_Threading",
+] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

@@ -1,0 +1,44 @@
+[package]
+name = "nex-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Lightweight internet speed meter overlay for Windows and Linux"
+
+build = "build.rs"
+
+[[bin]]
+name = "nexspeed"
+path = "src/main.rs"
+
+[dependencies]
+nex-core = { workspace = true }
+nex-platform = { workspace = true }
+nex-ui = { workspace = true }
+nex-net = { workspace = true }
+slint = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+dirs = "6"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+# Native notifications (Windows toast, Linux D-Bus) for the data-limit alert.
+notify-rust = "4"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
+# `cargo deb -p nex-app` builds the Debian/Ubuntu package (needs `cargo build --release` first).
+[package.metadata.deb]
+name = "nexspeed"
+section = "net"
+priority = "optional"
+depends = "$auto"
+extended-description = "Small always-on-top overlay with live download/upload speed, usage history, latency, speed test and data-limit alerts. No telemetry, no account."
+assets = [
+    ["target/release/nexspeed", "usr/bin/", "755"],
+    ["assets/nexspeed.desktop", "usr/share/applications/", "644"],
+    ["assets/icons/nexspeed-48.png", "usr/share/icons/hicolor/48x48/apps/nexspeed.png", "644"],
+    ["assets/icons/nexspeed-128.png", "usr/share/icons/hicolor/128x128/apps/nexspeed.png", "644"],
+    ["assets/icons/nexspeed-256.png", "usr/share/icons/hicolor/256x256/apps/nexspeed.png", "644"],
+    ["../../README.md", "usr/share/doc/nexspeed/README.md", "644"],
+]

@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfontconfig1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libwayland-dev libx11-dev libxcb1-dev libgl1-mesa-dev libdbus-1-dev pkg-config \
+            libxdo-dev
+      - name: Clippy (warnings are shown, not fatal yet)
+        run: cargo clippy --workspace --all-targets
+      - name: Test
+        run: cargo test --workspace
+      - name: Build release
+        run: cargo build --release -p nex-app
+      - name: Binary size
+        shell: bash
+        run: ls -l target/release/nexspeed target/release/nexspeed.exe 2>/dev/null || true
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexspeed-${{ runner.os }}
+          path: |
+            target/release/nexspeed
+            target/release/nexspeed.exe
+          if-no-files-found: ignore

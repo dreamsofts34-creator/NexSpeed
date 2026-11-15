@@ -1,0 +1,128 @@
+// Nex Speed overlay: small, frameless, always-on-top, draggable.
+// NOTE: no `Path` elements here on purpose. The graph is rendered in Rust into `graph`
+// because Slint's software renderer has had gaps with Path (slint-ui/slint#5237).
+
+import { Colors } from "theme.slint";
+
+export { Details } from "details.slint";
+export { Connections, ConnRow } from "connections.slint";
+export { History } from "history.slint";
+export { Colors } from "theme.slint";
+
+export component Overlay inherits Window {
+    in property <string> down-value: "0";
+    in property <string> down-unit: "B/s";
+    in property <string> up-value: "0";
+    in property <string> up-unit: "B/s";
+    in property <image> graph;
+    // Monthly data limit nearly used up: amber border.
+    in property <bool> warn: false;
+    // 0 = Graph, 1 = Minimal (numbers only), 2 = Compact (one line).
+    in property <int> style: 0;
+
+    // Pointer delta in logical pixels while dragging.
+    callback move-by(length, length);
+    callback quit();
+    // Pointer released after a drag: Rust saves the window position.
+    callback drag-ended();
+
+    no-frame: true;
+    always-on-top: true;
+    background: transparent;
+    title: "Nex Speed";
+    width: 232px;
+    height: root.style == 0 ? 84px : (root.style == 1 ? 48px : 30px);
+
+    Rectangle {
+        background: Colors.bg.with-alpha(Colors.opacity);
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: root.warn ? Colors.warn : Colors.border;
+
+        drag := TouchArea {
+            property <length> grab-x;
+            property <length> grab-y;
+            property <bool> dragging;
+            pointer-event(e) => {
+                if (e.button == PointerEventButton.left) {
+                    if (e.kind == PointerEventKind.down) {
+                        self.grab-x = self.mouse-x;
+                        self.grab-y = self.mouse-y;
+                        self.dragging = true;
+                    } else if (e.kind == PointerEventKind.up) {
+                        if (self.dragging) {
+                            root.drag-ended();
+                        }
+                        self.dragging = false;
+                    }
+                }
+            }
+            moved => {
+                if (self.dragging) {
+                    root.move-by(self.mouse-x - self.grab-x, self.mouse-y - self.grab-y);
+                }
+            }
+        }
+
+        // Graph and Minimal styles: big download number on the left, upload on the right.
+        if root.style != 2: Rectangle {
+            x: 14px;
+            y: 8px;
+            width: parent.width - 28px;
+            height: 30px;
+            HorizontalLayout {
+                spacing: 5px;
+                alignment: start;
+                Text { text: "↓"; color: Colors.down; font-size: 16px; vertical-alignment: center; }
+                Text { text: root.down-value; color: Colors.text; font-size: 22px; font-weight: 600; vertical-alignment: center; }
+                Text { text: root.down-unit; color: Colors.muted; font-size: 12px; vertical-alignment: center; }
+            }
+        }
+
+        if root.style != 2: Text {
+            x: parent.width - 120px;
+            y: 16px;
+            width: 106px;
+            height: 16px;
+            horizontal-alignment: right;
+            vertical-alignment: center;
+            text: "↑ " + root.up-value + " " + root.up-unit;
+            color: Colors.up;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        if root.style == 0: Image {
+            source: root.graph;
+            x: 14px;
+            y: 44px;
+            width: parent.width - 28px;
+            height: 30px;
+            image-fit: fill;
+        }
+
+        // Compact style: everything on one line.
+        if root.style == 2: Text {
+            x: 12px;
+            y: 0px;
+            width: parent.width - 24px;
+            height: parent.height;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+            text: "↓ " + root.down-value + " " + root.down-unit + "    ↑ " + root.up-value + " " + root.up-unit;
+            color: Colors.text;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        close := TouchArea {
+            x: parent.width - 24px;
+            y: 2px;
+            width: 22px;
+            height: 16px;
+            visible: root.style != 2 && (drag.has-hover || self.has-hover);
+            clicked => { root.quit(); }
+            Text { text: "×"; color: Colors.muted; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+        }
+    }
+}

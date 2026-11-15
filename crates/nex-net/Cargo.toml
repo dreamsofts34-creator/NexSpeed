@@ -1,0 +1,9 @@
+[package]
+name = "nex-net"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+# Blocking HTTP client, pure Rust TLS. Only used for the on-demand speed test.
+ureq = { version = "3", default-features = false, features = ["rustls"] }
