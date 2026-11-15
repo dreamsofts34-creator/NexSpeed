@@ -101,9 +101,12 @@ impl Shared {
     }
 }
 
+/// Tray-menu command handler installed by the overlay.
+type CommandFn = Box<dyn Fn(TrayCommand)>;
+
 thread_local! {
     /// Live on the UI thread; background threads reach them through `dispatch` / `with_details`.
-    static COMMAND_HANDLER: RefCell<Option<Box<dyn Fn(TrayCommand)>>> = const { RefCell::new(None) };
+    static COMMAND_HANDLER: RefCell<Option<CommandFn>> = const { RefCell::new(None) };
     static DETAILS: RefCell<Option<slint::Weak<Details>>> = const { RefCell::new(None) };
 }
 

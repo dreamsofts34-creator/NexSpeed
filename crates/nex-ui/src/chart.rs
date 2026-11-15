@@ -68,7 +68,17 @@ fn stroke(out: &mut [u8], w: usize, h: usize, ys: &[f32], rgb: [u8; 3], thicknes
     }
 }
 
-fn dot(out: &mut [u8], w: usize, h: usize, cx: f32, cy: f32, r: f32, rgb: [u8; 3], alpha: f32) {
+/// A filled circle: centre, radius, colour, opacity.
+struct Dot {
+    cx: f32,
+    cy: f32,
+    r: f32,
+    rgb: [u8; 3],
+    alpha: f32,
+}
+
+fn dot(out: &mut [u8], w: usize, h: usize, d: Dot) {
+    let Dot { cx, cy, r, rgb, alpha } = d;
     let x0 = (cx - r - 1.0).floor().max(0.0) as usize;
     let x1 = ((cx + r + 1.0).ceil() as usize).min(w);
     let y0 = (cy - r - 1.0).floor().max(0.0) as usize;
@@ -115,8 +125,8 @@ pub fn render_sparkline(w: usize, h: usize, down: &[f32], up: &[f32], pal: &Pale
     // Live point at the right end.
     let cx = wf - 6.0;
     let cy = curve_y(&dy, cx, wf);
-    dot(out, w, h, cx, cy, 6.5, pal.down, 0.22);
-    dot(out, w, h, cx, cy, 3.0, pal.down, 1.0);
+    dot(out, w, h, Dot { cx, cy, r: 6.5, rgb: pal.down, alpha: 0.22 });
+    dot(out, w, h, Dot { cx, cy, r: 3.0, rgb: pal.down, alpha: 1.0 });
 }
 
 /// Stacked daily bars: download at the bottom, upload on top. `days` is `(rx, tx)` bytes per day,
@@ -143,7 +153,7 @@ pub fn render_bars(w: usize, h: usize, days: &[(u64, u64)], pal: &Palette, out: 
     };
     // Baseline.
     fill(out, 0, w, base, base + 1, [pal.up[0], pal.up[1], pal.up[2]]);
-    for out_a in out.chunks_exact_mut(4).skip(base * w).take(w) {
+    for out_a in out.as_chunks_mut::<4>().0.iter_mut().skip(base * w).take(w) {
         // Soften the baseline: scale premultiplied pixel to ~35 % alpha.
         for c in out_a.iter_mut() {
             *c = (*c as f32 * 0.35) as u8;
@@ -191,7 +201,7 @@ mod tests {
     use super::*;
 
     fn alpha_sum(buf: &[u8]) -> u64 {
-        buf.chunks_exact(4).map(|p| p[3] as u64).sum()
+        buf.as_chunks::<4>().0.iter().map(|p| p[3] as u64).sum()
     }
 
     #[test]
@@ -225,7 +235,7 @@ mod tests {
         let mut buf = vec![0u8; w * h * 4];
         let down: Vec<f32> = (0..60).map(|i| ((i * 37) % 11) as f32 * 80_000.0).collect();
         render_sparkline(w, h, &down, &[5000.0; 60], &DARK, &mut buf);
-        assert!(buf.chunks_exact(4).all(|p| p[0] <= p[3] && p[1] <= p[3] && p[2] <= p[3]));
+        assert!(buf.as_chunks::<4>().0.iter().all(|p| p[0] <= p[3] && p[1] <= p[3] && p[2] <= p[3]));
     }
 
     fn px(buf: &[u8], w: usize, x: usize, y: usize) -> [u8; 4] {
@@ -258,6 +268,6 @@ mod tests {
         assert_eq!(alpha_sum(&buf), 0);
         render_bars(w, h, &[(0, 0), (0, 0)], &DARK, &mut buf);
         assert!(alpha_sum(&buf) > 0);
-        assert!(buf.chunks_exact(4).all(|p| p[0] <= p[3] && p[1] <= p[3] && p[2] <= p[3]));
+        assert!(buf.as_chunks::<4>().0.iter().all(|p| p[0] <= p[3] && p[1] <= p[3] && p[2] <= p[3]));
     }
 }
