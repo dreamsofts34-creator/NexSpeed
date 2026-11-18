@@ -105,7 +105,16 @@ impl UsageLog {
             })
             .collect();
         days.sort_by_key(|d| d.date);
-        days.dedup_by_key(|d| d.date);
+        // Duplicate dates (a damaged or merged file) are summed, not dropped.
+        days.dedup_by(|later, kept| {
+            if later.date == kept.date {
+                kept.rx = kept.rx.saturating_add(later.rx);
+                kept.tx = kept.tx.saturating_add(later.tx);
+                true
+            } else {
+                false
+            }
+        });
         Some(Self { days })
     }
 }
@@ -170,5 +179,20 @@ mod tests {
         }
         assert_eq!(log.days().len(), MAX_DAYS);
         assert_eq!(log.days()[0].date, 20000010);
+    }
+
+    #[test]
+    fn decode_sums_duplicate_dates() {
+        let mut log = UsageLog::new();
+        log.add(20261114, 1, 2);
+        let mut bytes = log.encode();
+        // Append a second record for the same day and fix the count.
+        bytes.extend_from_slice(&20261114u32.to_le_bytes());
+        bytes.extend_from_slice(&10u64.to_le_bytes());
+        bytes.extend_from_slice(&20u64.to_le_bytes());
+        bytes[4..8].copy_from_slice(&2u32.to_le_bytes());
+        let back = UsageLog::decode(&bytes).unwrap();
+        assert_eq!(back.days().len(), 1);
+        assert_eq!(back.day(20261114), (11, 22));
     }
 }

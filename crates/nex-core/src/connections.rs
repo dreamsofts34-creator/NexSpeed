@@ -84,11 +84,21 @@ pub struct Connection {
 impl Connection {
     /// Outgoing traffic worth listing: connected to a real remote address (not a listener).
     pub fn is_active(&self) -> bool {
-        self.state == TcpState::Established && !self.remote.ip().is_unspecified()
+        let ip = self.remote.ip().to_canonical();
+        self.state == TcpState::Established && !ip.is_unspecified()
     }
 
+    /// Also true for IPv4 loopback in IPv6 clothing (`::ffff:127.0.0.1`).
     pub fn is_loopback(&self) -> bool {
-        self.remote.ip().is_loopback()
+        self.remote.ip().to_canonical().is_loopback()
+    }
+
+    /// Remote address for display: `::ffff:1.2.3.4` is shown as `1.2.3.4:443`.
+    pub fn remote_display(&self) -> String {
+        match self.remote.ip().to_canonical() {
+            std::net::IpAddr::V4(v4) => format!("{v4}:{}", self.remote.port()),
+            std::net::IpAddr::V6(v6) => format!("[{v6}]:{}", self.remote.port()),
+        }
     }
 }
 
@@ -199,5 +209,9 @@ garbage line
         assert!(!mk("1.2.3.4:443", TcpState::TimeWait).is_active());
         assert!(!mk("0.0.0.0:0", TcpState::Established).is_active());
         assert!(mk("127.0.0.1:80", TcpState::Established).is_loopback());
+        assert!(mk("[::ffff:127.0.0.1]:80", TcpState::Established).is_loopback());
+        assert!(!mk("[::ffff:1.2.3.4]:443", TcpState::Established).is_loopback());
+        assert_eq!(mk("[::ffff:1.2.3.4]:443", TcpState::Established).remote_display(), "1.2.3.4:443");
+        assert_eq!(mk("[2001:db8::1]:443", TcpState::Established).remote_display(), "[2001:db8::1]:443");
     }
 }

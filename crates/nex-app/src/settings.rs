@@ -4,6 +4,7 @@
 use std::fs;
 use std::path::PathBuf;
 
+use nex_core::{clamp_opacity, clamp_style};
 use serde::{Deserialize, Serialize};
 
 #[cfg(windows)]
@@ -65,11 +66,28 @@ impl Settings {
         dirs::config_dir().map(|d| d.join(APP_DIR).join("settings.toml"))
     }
 
+    /// Reads the settings. A missing file gives the defaults. A file that cannot be parsed is
+    /// moved aside as `settings.toml.bad` (so a hand edit is not silently overwritten on the next
+    /// save) and the defaults are used. Out-of-range values are corrected.
     pub fn load() -> Self {
-        Self::path()
-            .and_then(|p| fs::read_to_string(p).ok())
-            .and_then(|s| toml::from_str(&s).ok())
-            .unwrap_or_default()
+        let Some(path) = Self::path() else { return Self::default() };
+        let Ok(text) = fs::read_to_string(&path) else { return Self::default() };
+        match toml::from_str::<Settings>(&text) {
+            Ok(mut settings) => {
+                settings.sanitize();
+                settings
+            }
+            Err(_) => {
+                let _ = fs::rename(&path, path.with_extension("toml.bad"));
+                Self::default()
+            }
+        }
+    }
+
+    /// Keeps hand-edited values in a usable range (an almost invisible overlay, an unknown style).
+    fn sanitize(&mut self) {
+        self.opacity_pct = clamp_opacity(self.opacity_pct);
+        self.style = clamp_style(self.style);
     }
 
     /// Best effort: a failure to save must never crash the app. Writes a temp file first
@@ -122,6 +140,17 @@ mod tests {
         assert_eq!(next_limit(0), 50);
         assert_eq!(next_limit(1000), 0);
         assert_eq!(next_limit(77), 0);
+    }
+
+    #[test]
+    fn sanitize_fixes_out_of_range_values() {
+        let mut s: Settings = toml::from_str("opacity_pct = 1\nstyle = 9").unwrap();
+        s.sanitize();
+        assert_eq!(s.opacity_pct, nex_core::clamp_opacity(1));
+        assert_eq!(s.style, 0);
+        let mut ok = Settings { opacity_pct: 70, style: 2, ..Settings::default() };
+        ok.sanitize();
+        assert_eq!((ok.opacity_pct, ok.style), (70, 2));
     }
 
     #[test]

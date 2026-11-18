@@ -5,6 +5,7 @@ pub mod connections;
 mod fullscreen;
 pub mod hotkey;
 pub mod icon;
+pub mod screen;
 mod tray;
 
 #[cfg(target_os = "linux")]

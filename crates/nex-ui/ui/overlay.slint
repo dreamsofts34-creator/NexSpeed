@@ -7,6 +7,7 @@ import { Colors } from "theme.slint";
 export { Details } from "details.slint";
 export { Connections, ConnRow } from "connections.slint";
 export { History } from "history.slint";
+export { Preferences } from "preferences.slint";
 export { Colors } from "theme.slint";
 
 export component Overlay inherits Window {
@@ -15,16 +16,23 @@ export component Overlay inherits Window {
     in property <string> up-value: "0";
     in property <string> up-unit: "B/s";
     in property <image> graph;
-    // Monthly data limit nearly used up: amber border.
-    in property <bool> warn: false;
+    // Monthly data limit: 0 = fine, 1 = 80 % used (amber border), 2 = limit reached (red border).
+    in property <int> alert: 0;
+    // No usable connection: the numbers are dimmed.
+    in property <bool> online: true;
     // 0 = Graph, 1 = Minimal (numbers only), 2 = Compact (one line).
     in property <int> style: 0;
 
     // Pointer delta in logical pixels while dragging.
     callback move-by(length, length);
-    callback quit();
-    // Pointer released after a drag: Rust saves the window position.
+    // Pointer released after a drag: Rust snaps to screen edges and saves the window position.
     callback drag-ended();
+    // The x button: hides the overlay (or quits when there is no tray icon to bring it back).
+    callback close-clicked();
+    // Double click on the overlay.
+    callback open-details();
+    // Right click on the overlay.
+    callback open-settings();
 
     no-frame: true;
     always-on-top: true;
@@ -33,17 +41,23 @@ export component Overlay inherits Window {
     width: 232px;
     height: root.style == 0 ? 84px : (root.style == 1 ? 48px : 30px);
 
+    property <color> value-color: root.online ? Colors.text : Colors.dim;
+
     Rectangle {
         background: Colors.bg.with-alpha(Colors.opacity);
         border-radius: 12px;
-        border-width: 1px;
-        border-color: root.warn ? Colors.warn : Colors.border;
+        border-width: root.alert == 2 ? 2px : 1px;
+        border-color: root.alert == 2 ? Colors.danger : (root.alert == 1 ? Colors.warn : Colors.border);
+        animate border-color { duration: 250ms; }
 
         drag := TouchArea {
             property <length> grab-x;
             property <length> grab-y;
             property <bool> dragging;
             pointer-event(e) => {
+                if (e.button == PointerEventButton.right && e.kind == PointerEventKind.up) {
+                    root.open-settings();
+                }
                 if (e.button == PointerEventButton.left) {
                     if (e.kind == PointerEventKind.down) {
                         self.grab-x = self.mouse-x;
@@ -62,32 +76,54 @@ export component Overlay inherits Window {
                     root.move-by(self.mouse-x - self.grab-x, self.mouse-y - self.grab-y);
                 }
             }
+            double-clicked => { root.open-details(); }
         }
 
-        // Graph and Minimal styles: big download number on the left, upload on the right.
-        if root.style != 2: Rectangle {
+        // Graph and Minimal styles: download on the left. The number sits in a fixed-width box,
+        // so the unit does not jump sideways while the digits change.
+        if root.style != 2: Text {
             x: 14px;
             y: 8px;
-            width: parent.width - 28px;
+            width: 16px;
             height: 30px;
-            HorizontalLayout {
-                spacing: 5px;
-                alignment: start;
-                Text { text: "↓"; color: Colors.down; font-size: 16px; vertical-alignment: center; }
-                Text { text: root.down-value; color: Colors.text; font-size: 22px; font-weight: 600; vertical-alignment: center; }
-                Text { text: root.down-unit; color: Colors.muted; font-size: 12px; vertical-alignment: center; }
-            }
+            text: "↓";
+            color: Colors.down;
+            font-size: 16px;
+            vertical-alignment: center;
+        }
+        if root.style != 2: Text {
+            x: 30px;
+            y: 8px;
+            width: 58px;
+            height: 30px;
+            text: root.down-value;
+            color: root.value-color;
+            font-size: 22px;
+            font-weight: 600;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+        if root.style != 2: Text {
+            x: 90px;
+            y: 8px;
+            width: 44px;
+            height: 30px;
+            text: root.down-unit;
+            color: Colors.muted;
+            font-size: 12px;
+            vertical-alignment: center;
         }
 
+        // Upload on the right.
         if root.style != 2: Text {
-            x: parent.width - 120px;
+            x: parent.width - 102px;
             y: 16px;
-            width: 106px;
+            width: 88px;
             height: 16px;
             horizontal-alignment: right;
             vertical-alignment: center;
             text: "↑ " + root.up-value + " " + root.up-unit;
-            color: Colors.up;
+            color: root.online ? Colors.up : Colors.dim;
             font-size: 12px;
             font-weight: 500;
         }
@@ -110,19 +146,32 @@ export component Overlay inherits Window {
             vertical-alignment: center;
             horizontal-alignment: center;
             text: "↓ " + root.down-value + " " + root.down-unit + "    ↑ " + root.up-value + " " + root.up-unit;
-            color: Colors.text;
+            color: root.value-color;
             font-size: 12px;
             font-weight: 500;
         }
 
+        // Close button, only while the pointer is over the overlay (all styles, so even without
+        // a tray icon the app can be closed from the UI).
         close := TouchArea {
-            x: parent.width - 24px;
-            y: 2px;
-            width: 22px;
-            height: 16px;
-            visible: root.style != 2 && (drag.has-hover || self.has-hover);
-            clicked => { root.quit(); }
-            Text { text: "×"; color: Colors.muted; font-size: 14px; horizontal-alignment: center; vertical-alignment: center; }
+            x: parent.width - 26px;
+            y: 3px;
+            width: 20px;
+            height: 18px;
+            visible: drag.has-hover || self.has-hover;
+            mouse-cursor: MouseCursor.pointer;
+            clicked => { root.close-clicked(); }
+            Rectangle {
+                border-radius: 4px;
+                background: close.has-hover ? Colors.hover : transparent;
+            }
+            Text {
+                text: "×";
+                color: Colors.muted;
+                font-size: 14px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
         }
     }
 }

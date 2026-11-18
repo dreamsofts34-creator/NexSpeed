@@ -4,6 +4,7 @@
 mod connections;
 mod export;
 mod format;
+mod geometry;
 mod history;
 mod prefs;
 mod sampler;
@@ -17,4 +18,11 @@ pub use source::{AdapterReading, NetSource};
 pub use usage::{limit_percent, DayUsage, UsageLog};
 pub use connections::{parse_proc_net_tcp, windows_port, Connection, ProcTcpRow, TcpState};
 pub use export::usage_csv;
-pub use prefs::{last_days, limit_level, next_opacity, next_style, prev_day, style_name, OPACITY_STEPS};
+pub use geometry::{
+    apply_workarea, default_position, is_on_screen, parse_net_workarea, parse_xrandr, restore_position,
+    snap_position, Rect,
+};
+pub use prefs::{
+    clamp_opacity, clamp_style, last_days, limit_fraction, limit_level, next_opacity, next_style, prev_day,
+    style_name, OPACITY_STEPS,
+};

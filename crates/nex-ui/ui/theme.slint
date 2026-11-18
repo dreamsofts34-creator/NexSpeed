@@ -1,5 +1,7 @@
 // Colors for all Nex Speed windows. Each window tree has its own copy of a global, so the app
 // sets `light` / `opacity` on every window (see `apply_look` in the app crate).
+// The `down` / `up` colors must match the chart palettes in `nex-ui/src/chart.rs`.
+// Light-theme text colors are chosen for at least 4.5:1 contrast on `bg` and `panel` (WCAG AA).
 
 export global Colors {
     in property <bool> light: false;
@@ -10,14 +12,22 @@ export global Colors {
     out property <color> panel: light ? #FFFFFF : #1E1E22;
     out property <color> text: light ? #17171A : #F4F4F5;
     out property <color> muted: light ? #52525B : #A1A1AA;
-    out property <color> dim: light ? #71717A : #8B8B94;
+    out property <color> dim: light ? #5F5F68 : #8B8B94;
     out property <color> button: light ? #E4E4E9 : #2A2A30;
     out property <color> primary: light ? #17171A : #F4F4F5;
     out property <color> on-primary: light ? #F4F4F5 : #17171A;
     out property <color> border: light ? #00000018 : #ffffff1a;
     out property <color> down: light ? #2F63D9 : #8FB4FF;
-    out property <color> up: light ? #8A7F63 : #D8D2C4;
-    out property <color> warn: light ? #C77A1E : #F5B97A;
+    out property <color> up: light ? #6B6147 : #D8D2C4;
+    out property <color> warn: light ? #9A5A0A : #F5B97A;
+    out property <color> danger: light ? #B42318 : #F28B8B;
     out property <color> ok: #4ADE80;
     out property <color> idle: #71717A;
+
+    // Soft layers drawn over a control for hover / pressed feedback.
+    out property <color> hover: light ? #0000000d : #ffffff12;
+    out property <color> pressed: light ? #0000001a : #ffffff22;
+    // The same, for filled (primary) buttons, whose own color is the opposite of the theme.
+    out property <color> hover-on-primary: light ? #ffffff26 : #0000001a;
+    out property <color> pressed-on-primary: light ? #ffffff40 : #0000002e;
 }

@@ -4,7 +4,11 @@ use std::sync::Arc;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TrayCommand {
     ShowDetails,
+    ShowHistory,
+    ShowConnections,
+    ShowSettings,
     ToggleOverlay,
+    ResetPosition,
     ToggleAutoHide,
     ToggleAutostart,
     ToggleUnits,

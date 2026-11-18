@@ -3017,7 +3017,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nex-app"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "dirs 6.0.0",
@@ -3034,18 +3034,18 @@ dependencies = [
 
 [[package]]
 name = "nex-core"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "nex-net"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ureq",
 ]
 
 [[package]]
 name = "nex-platform"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "auto-launch",
  "global-hotkey",
@@ -3057,7 +3057,7 @@ dependencies = [
 
 [[package]]
 name = "nex-ui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "slint",
  "slint-build",

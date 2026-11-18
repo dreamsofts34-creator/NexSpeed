@@ -1,8 +1,9 @@
 //! Tiny CPU renderer for the speed graph (smooth curve, soft fill, live dot).
 //! Output is premultiplied RGBA8. Pure Rust, no GPU, no extra crates.
 
-/// Graph size in pixels (2x the logical 196x30 area, so it stays crisp).
-pub const GRAPH_W: u32 = 392;
+/// Graph size in pixels: exactly 2x the logical 204x30 area drawn by overlay.slint (window
+/// width 232 minus 2 x 14 padding), so it is neither stretched nor blurred.
+pub const GRAPH_W: u32 = 408;
 pub const GRAPH_H: u32 = 60;
 
 /// Never scale the chart below this, so an idle connection draws a flat line, not noise.
@@ -14,7 +15,7 @@ pub struct Palette {
 }
 
 pub const DARK: Palette = Palette { down: [0x8F, 0xB4, 0xFF], up: [0xD8, 0xD2, 0xC4] };
-pub const LIGHT: Palette = Palette { down: [0x2F, 0x63, 0xD9], up: [0x8A, 0x7F, 0x63] };
+pub const LIGHT: Palette = Palette { down: [0x2F, 0x63, 0xD9], up: [0x6B, 0x61, 0x47] };
 
 pub fn palette(light: bool) -> &'static Palette {
     if light {

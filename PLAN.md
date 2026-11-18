@@ -365,3 +365,16 @@ Findings that changed the implementation:
 3. **Wiring:** `nex-app/build.rs` embeds the `.ico` with `winres` (Windows only, failure is only a warning); the tray uses the embedded raw RGBA; Slint windows use `icon: @image-url`, with the build configured to embed pixels for the software renderer; `.deb` installs the icons and the `.desktop` file uses `Icon=nexspeed`.
 4. **Unverified until CI:** `winres` (needs the Windows SDK resource compiler, present on GitHub's `windows-latest`) and the Slint `EmbedForSoftwareRenderer` build setting.
 5. **Small sizes:** at 16 px the gauge becomes a blur but the two arrows stay readable. A simplified 16 px variant could be added later.
+
+---
+
+## 21. Polish and fixes pass
+
+Closes the "still open" items of section 19 where they could be done without a Windows machine, and gives every window the same look.
+
+1. **Monitor-aware placement.** `nex-core/geometry.rs` (pure, tested): `restore_position` keeps a saved position when its centre is still on a monitor (nudged fully inside) and otherwise uses the top-right corner of the primary monitor; `snap_position` snaps to edges within 20 px and keeps an 8 px margin. Monitor data comes from `nex-platform/screen.rs`: Windows `EnumDisplayMonitors` + `GetMonitorInfoW` (work area, so the taskbar is excluded), Linux `xrandr --current` cut to `_NET_WORKAREA`. Unknown layout (Wayland without XWayland, missing tools) means "do nothing", as before. The `windows` crate gets the `Win32_Graphics_Gdi` feature.
+2. **UI.** `widgets.slint` holds `NxButton`, `NxSegment`, `NxCard`, `NxStat`, `NxProgress`; all windows follow the theme and use layouts instead of hard-coded coordinates. `Colors` gained `danger`, `hover`, `pressed` (and primary-button variants). The chart palette in `chart.rs` still matches `down` / `up`.
+3. **Behaviour.** x hides to the tray (quits only without a tray); double-click opens details; opening a window fills it at once from `Shared::display`; the speed test can be cancelled and uploads at most 50 MB; limit level 2 is a red border.
+4. **Robustness.** Settings are sanitised on load and a broken file is kept as `settings.toml.bad`; Windows tray updates are diffed (`force_update` after a click re-syncs check marks).
+5. **Not done (needs hardware or a Windows machine):** per-app bandwidth (ETW), hourly history, AppImage / Flatpak. **Not compiled by the author of this step**: the first CI run on Windows and Linux is the compile test (pure logic has unit tests: core now 47).
+

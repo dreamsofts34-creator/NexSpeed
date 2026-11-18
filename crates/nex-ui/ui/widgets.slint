@@ -1,0 +1,133 @@
+// Small building blocks shared by the Nex Speed windows, so every window looks and behaves
+// the same: buttons with hover / pressed feedback, cards, stat tiles, a progress bar and a
+// segmented-control item. No `Path` elements (see overlay.slint).
+
+import { Colors } from "theme.slint";
+
+// Push button. `primary` = filled, otherwise a quiet grey button.
+export component NxButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> primary: false;
+    // Greyed out and not clickable.
+    in property <bool> disabled: false;
+    callback clicked();
+
+    height: 34px;
+    border-radius: 8px;
+    background: root.disabled ? Colors.button : (root.primary ? Colors.primary : Colors.button);
+    animate background { duration: 120ms; }
+
+    // Hover / pressed feedback.
+    Rectangle {
+        border-radius: root.border-radius;
+        background: root.disabled ? transparent : (area.pressed ? (root.primary ? Colors.pressed-on-primary : Colors.pressed) : (area.has-hover ? (root.primary ? Colors.hover-on-primary : Colors.hover) : transparent));
+        animate background { duration: 100ms; }
+    }
+
+    Text {
+        text: root.text;
+        color: root.disabled ? Colors.dim : (root.primary ? Colors.on-primary : Colors.text);
+        font-size: 13px;
+        font-weight: 600;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+
+    area := TouchArea {
+        enabled: !root.disabled;
+        mouse-cursor: MouseCursor.pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// One option of a segmented control (put several in a HorizontalLayout inside a rounded Rectangle).
+export component NxSegment inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected: false;
+    callback clicked();
+
+    border-radius: 7px;
+    background: root.selected ? Colors.primary : (area.has-hover ? Colors.hover : transparent);
+    animate background { duration: 120ms; }
+
+    Text {
+        text: root.text;
+        color: root.selected ? Colors.on-primary : Colors.muted;
+        font-size: 12px;
+        font-weight: 600;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    area := TouchArea {
+        mouse-cursor: MouseCursor.pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// Segmented control: one option per entry of `options`, `current` is the selected index.
+export component NxChoice inherits Rectangle {
+    in property <[string]> options;
+    in property <int> current: 0;
+    callback selected(int);
+
+    height: 32px;
+    background: Colors.button;
+    border-radius: 9px;
+
+    HorizontalLayout {
+        padding: 2px;
+        spacing: 2px;
+        for option[i] in root.options: NxSegment {
+            text: option;
+            selected: i == root.current;
+            clicked => { root.selected(i); }
+        }
+    }
+}
+
+// Rounded panel with a thin border.
+export component NxCard inherits Rectangle {
+    background: Colors.panel;
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: Colors.border;
+}
+
+// Label + value tile, e.g. "Today" / "3.20 GB".
+export component NxStat inherits NxCard {
+    in property <string> label;
+    in property <string> value;
+    in property <color> value-color: Colors.text;
+
+    VerticalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        padding-top: 9px;
+        padding-bottom: 9px;
+        spacing: 2px;
+        Text { text: root.label; color: Colors.muted; font-size: 11px; }
+        Text { text: root.value; color: root.value-color; font-size: 18px; font-weight: 600; overflow: elide; }
+    }
+}
+
+// Thin horizontal progress bar. `value` is 0.0 - 1.0 (the app keeps it in range).
+export component NxProgress inherits Rectangle {
+    in property <float> value: 0;
+    in property <color> fill: Colors.down;
+
+    height: 6px;
+    border-radius: 3px;
+    background: Colors.button;
+
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: parent.width * root.value;
+        height: parent.height;
+        border-radius: root.border-radius;
+        background: root.fill;
+        animate width { duration: 250ms; easing: ease-out; }
+    }
+}

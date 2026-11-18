@@ -33,6 +33,8 @@ name = "nexspeed"
 section = "net"
 priority = "optional"
 depends = "$auto"
+# xprop (full-screen detection) and xrandr (monitor layout for the overlay position) are optional.
+recommends = "x11-utils, x11-xserver-utils"
 extended-description = "Small always-on-top overlay with live download/upload speed, usage history, latency, speed test and data-limit alerts. No telemetry, no account."
 assets = [
     ["target/release/nexspeed", "usr/bin/", "755"],

@@ -1,0 +1,90 @@
+// Nex Speed settings window: every setting that used to live only in the tray menu, so the app
+// stays usable where there is no tray (stock GNOME). Opened from the tray, the details window
+// or by right-clicking the overlay. Each control reports the chosen index to Rust.
+
+import { Colors } from "theme.slint";
+import { NxButton, NxChoice } from "widgets.slint";
+
+component Row inherits Rectangle {
+    in property <string> label;
+    in property <[string]> options;
+    in property <int> current: 0;
+    callback selected(int);
+
+    height: 32px;
+    Text {
+        x: 0px;
+        width: 112px;
+        height: parent.height;
+        text: root.label;
+        color: Colors.muted;
+        font-size: 12px;
+        vertical-alignment: center;
+    }
+    NxChoice {
+        x: 120px;
+        width: parent.width - 120px;
+        options: root.options;
+        current: root.current;
+        selected(i) => { root.selected(i); }
+    }
+}
+
+export component Preferences inherits Window {
+    // Selected index of each choice (the Rust side maps them to values).
+    in property <int> style: 0;
+    in property <int> theme: 0;
+    in property <int> opacity-step: 0;
+    in property <int> units: 0;
+    in property <int> limit: 0;
+    in property <int> auto-hide: 1;
+    in property <int> autostart: 1;
+    callback style-selected(int);
+    callback theme-selected(int);
+    callback opacity-selected(int);
+    callback units-selected(int);
+    callback limit-selected(int);
+    callback auto-hide-selected(int);
+    callback autostart-selected(int);
+    callback reset-position();
+    callback quit-app();
+
+    icon: @image-url("icon.png");
+    title: "Nex Speed · Settings";
+    background: Colors.bg;
+    preferred-width: 420px;
+    preferred-height: 488px;
+    min-width: 420px;
+    max-width: 420px;
+    min-height: 488px;
+    max-height: 488px;
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 12px;
+        alignment: start;
+
+        Text { text: "Overlay"; color: Colors.text; font-size: 15px; font-weight: 600; height: 22px; vertical-alignment: center; }
+        Row { label: "Style"; options: ["Graph", "Minimal", "Compact"]; current: root.style; selected(i) => { root.style-selected(i); } }
+        Row { label: "Theme"; options: ["Dark", "Light"]; current: root.theme; selected(i) => { root.theme-selected(i); } }
+        Row { label: "Opacity"; options: ["100%", "85%", "70%", "50%"]; current: root.opacity-step; selected(i) => { root.opacity-selected(i); } }
+        Row { label: "Speed units"; options: ["Bytes (MB/s)", "Bits (Mbps)"]; current: root.units; selected(i) => { root.units-selected(i); } }
+        Row { label: "Hide in full screen"; options: ["On", "Off"]; current: root.auto-hide; selected(i) => { root.auto-hide-selected(i); } }
+
+        Text { text: "General"; color: Colors.text; font-size: 15px; font-weight: 600; height: 22px; vertical-alignment: center; }
+        Row { label: "Monthly limit (GB)"; options: ["Off", "50", "100", "200", "500", "1000"]; current: root.limit; selected(i) => { root.limit-selected(i); } }
+        Row { label: "Start with system"; options: ["On", "Off"]; current: root.autostart; selected(i) => { root.autostart-selected(i); } }
+
+        HorizontalLayout {
+            spacing: 8px;
+            height: 34px;
+            NxButton { text: "Reset overlay position"; clicked => { root.reset-position(); } }
+            NxButton { text: "Quit Nex Speed"; clicked => { root.quit-app(); } }
+        }
+        Text {
+            text: "Right-click the overlay to open this window.";
+            color: Colors.dim;
+            font-size: 11px;
+        }
+    }
+}

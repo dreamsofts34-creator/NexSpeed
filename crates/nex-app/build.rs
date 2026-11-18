@@ -8,6 +8,9 @@ fn main() {
         res.set_icon("assets/nexspeed.ico");
         res.set("ProductName", "Nex Speed");
         res.set("FileDescription", "Nex Speed - internet speed meter");
+        res.set("InternalName", "nexspeed");
+        res.set("OriginalFilename", "nexspeed.exe");
+        res.set("LegalCopyright", "Copyright (c) Nex Speed contributors. GPL-3.0-or-later.");
         if let Err(e) = res.compile() {
             // Never block a build just because the icon could not be embedded.
             println!("cargo:warning=could not embed the Windows icon: {e}");

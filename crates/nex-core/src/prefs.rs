@@ -11,11 +11,29 @@ pub fn next_opacity(current: u8) -> u8 {
     }
 }
 
+/// Lowest overlay opacity accepted from a hand-edited settings file: below this the overlay
+/// would be practically invisible and the user could not find it again.
+pub const MIN_OPACITY: u8 = 30;
+
+/// Keeps an opacity from the settings file in the usable range.
+pub fn clamp_opacity(pct: u8) -> u8 {
+    pct.clamp(MIN_OPACITY, 100)
+}
+
 /// Overlay styles: 0 = Graph, 1 = Minimal (numbers only), 2 = Compact (one line).
 pub const STYLE_COUNT: u8 = 3;
 
+/// Unknown styles from the settings file fall back to Graph.
+pub fn clamp_style(style: u8) -> u8 {
+    if style < STYLE_COUNT {
+        style
+    } else {
+        0
+    }
+}
+
 pub fn next_style(current: u8) -> u8 {
-    if current + 1 >= STYLE_COUNT {
+    if current.saturating_add(1) >= STYLE_COUNT {
         0
     } else {
         current + 1
@@ -36,6 +54,15 @@ pub fn limit_level(percent: Option<f64>) -> u8 {
         Some(p) if p >= 100.0 => 2,
         Some(p) if p >= 80.0 => 1,
         _ => 0,
+    }
+}
+
+/// Share of the monthly limit used as a 0.0 - 1.0 fraction for a progress bar
+/// (0 when there is no limit, capped at 1 when the limit is exceeded).
+pub fn limit_fraction(percent: Option<f64>) -> f32 {
+    match percent {
+        Some(p) if p.is_finite() => (p / 100.0).clamp(0.0, 1.0) as f32,
+        _ => 0.0,
     }
 }
 
@@ -91,6 +118,7 @@ mod tests {
     fn style_cycles_and_names() {
         assert_eq!(next_style(0), 1);
         assert_eq!(next_style(2), 0);
+        assert_eq!(next_style(255), 0);
         assert_eq!(style_name(0), "Graph");
         assert_eq!(style_name(2), "Compact");
         assert_eq!(style_name(9), "Graph");
@@ -102,6 +130,25 @@ mod tests {
         assert_eq!(limit_level(Some(79.9)), 0);
         assert_eq!(limit_level(Some(80.0)), 1);
         assert_eq!(limit_level(Some(100.0)), 2);
+    }
+
+    #[test]
+    fn settings_values_are_clamped() {
+        assert_eq!(clamp_opacity(0), MIN_OPACITY);
+        assert_eq!(clamp_opacity(70), 70);
+        assert_eq!(clamp_opacity(250), 100);
+        assert_eq!(clamp_style(2), 2);
+        assert_eq!(clamp_style(3), 0);
+        assert_eq!(clamp_style(255), 0);
+    }
+
+    #[test]
+    fn limit_fraction_is_capped() {
+        assert_eq!(limit_fraction(None), 0.0);
+        assert_eq!(limit_fraction(Some(50.0)), 0.5);
+        assert_eq!(limit_fraction(Some(180.0)), 1.0);
+        assert_eq!(limit_fraction(Some(-3.0)), 0.0);
+        assert_eq!(limit_fraction(Some(f64::NAN)), 0.0);
     }
 
     #[test]

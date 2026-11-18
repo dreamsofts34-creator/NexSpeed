@@ -13,6 +13,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Tag must match the version in Cargo.toml
+        shell: bash
+        run: |
+          v=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ "v$v" != "${{ github.ref_name }}" ]; then
+            echo "Tag ${{ github.ref_name }} does not match Cargo.toml version $v"; exit 1
+          fi
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --release -p nex-app
@@ -23,14 +30,25 @@ jobs:
           Copy-Item target/release/nexspeed.exe dist/
           Copy-Item README.md, LICENSE dist/
           Compress-Archive -Path dist/* -DestinationPath "nexspeed-${{ github.ref_name }}-windows-x86_64.zip"
+          (Get-FileHash "nexspeed-${{ github.ref_name }}-windows-x86_64.zip" -Algorithm SHA256).Hash.ToLower() + "  nexspeed-${{ github.ref_name }}-windows-x86_64.zip" | Out-File -Encoding ascii "nexspeed-${{ github.ref_name }}-windows-x86_64.zip.sha256"
       - uses: softprops/action-gh-release@v2
         with:
-          files: nexspeed-*-windows-x86_64.zip
+          files: |
+            nexspeed-*-windows-x86_64.zip
+            nexspeed-*-windows-x86_64.zip.sha256
 
   linux:
-    runs-on: ubuntu-latest
+    # Built on an older Ubuntu so the binary runs on more distributions (older glibc).
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - name: Tag must match the version in Cargo.toml
+        shell: bash
+        run: |
+          v=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ "v$v" != "${{ github.ref_name }}" ]; then
+            echo "Tag ${{ github.ref_name }} does not match Cargo.toml version $v"; exit 1
+          fi
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Build dependencies
@@ -49,8 +67,10 @@ jobs:
           cp crates/nex-app/assets/icons/nexspeed-256.png dist/nexspeed.png
           cp crates/nex-app/assets/nexspeed.desktop dist/
           tar -C dist -czf nexspeed-${{ github.ref_name }}-linux-x86_64.tar.gz .
+          sha256sum nexspeed-*.tar.gz nexspeed_*.deb > SHA256SUMS-linux.txt
       - uses: softprops/action-gh-release@v2
         with:
           files: |
             nexspeed-*-linux-x86_64.tar.gz
             nexspeed_*.deb
+            SHA256SUMS-linux.txt
